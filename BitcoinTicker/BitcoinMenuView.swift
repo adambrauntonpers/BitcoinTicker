@@ -96,7 +96,7 @@ struct BitcoinMenuView: View {
 
             HStack {
 
-                Text("CoinGecko")
+                Text(priceService.source)
                     .font(.caption)
                     .foregroundColor(.secondary)
 
