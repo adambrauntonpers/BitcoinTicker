@@ -1,0 +1,51 @@
+name: Build macOS app
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-14   # Xcode 15; app targets macOS 13 Ventura
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build (universal, ad-hoc signed)
+        run: |
+          xcodebuild -version
+          xcodebuild \
+            -project BitcoinTicker.xcodeproj \
+            -scheme BitcoinTicker \
+            -configuration Release \
+            -derivedDataPath build \
+            ARCHS="arm64 x86_64" ONLY_ACTIVE_ARCH=NO \
+            CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="-" DEVELOPMENT_TEAM="" \
+            build
+
+      - name: Package
+        run: |
+          APP=build/Build/Products/Release/BitcoinTicker.app
+          codesign --verify --deep --strict "$APP"
+          lipo -archs "$APP/Contents/MacOS/BitcoinTicker"
+          /usr/libexec/PlistBuddy -c "Print :LSMinimumSystemVersion" "$APP/Contents/Info.plist"
+          mkdir -p dist
+          ditto -c -k --keepParent "$APP" dist/BitcoinTicker.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BitcoinTicker
+          path: dist/BitcoinTicker.zip
+
+      - name: Publish build to the 'dist' branch
+        run: |
+          cd dist
+          git init -q -b dist
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add BitcoinTicker.zip
+          git commit -q -m "Build ${GITHUB_SHA::7}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" dist
