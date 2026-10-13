@@ -20,7 +20,7 @@ struct BitcoinTickerApp: App {
 /// The text shown in the menu bar.
 ///
 /// On macOS 13 a MenuBarExtra label reliably renders a single `Text`, so the
-/// price and change are built as one concatenated `Text` rather than an HStack.
+/// price and change are built as one interpolated `Text` rather than an HStack.
 private struct TickerLabel: View {
 
     @ObservedObject var priceService: BitcoinPriceService
@@ -37,9 +37,13 @@ private struct TickerLabel: View {
 
             let changeText = String(format: "%.1f%%", abs(change))
 
-            Text(priceText)
-                + Text(" \(arrow)\(changeText)")
-                    .foregroundColor(change >= 0 ? .green : .red)
+            // Interpolate rather than `Text + Text`, which is deprecated in the
+            // macOS 26 SDK. `foregroundColor` (not `foregroundStyle`) because
+            // only it returns `Text` on macOS 13.
+            let changeLabel = Text("\(arrow)\(changeText)")
+                .foregroundColor(change >= 0 ? .green : .red)
+
+            Text("\(priceText) \(changeLabel)")
 
         } else {
             Text("BTC …")

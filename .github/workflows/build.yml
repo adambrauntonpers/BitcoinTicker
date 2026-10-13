@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   build:
-    runs-on: macos-14   # Xcode 15; app targets macOS 13 Ventura
+    runs-on: macos-latest   # newest Xcode; MACOSX_DEPLOYMENT_TARGET keeps macOS 13 support
     steps:
       - uses: actions/checkout@v4
 
